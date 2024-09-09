@@ -97,7 +97,9 @@ Git is used for version control with the following configuration:
 To run the satellite dynamics simulation:
 
 1. Clone the repository:
-```git clone https://github.com/pncln/sat_dynamics.git```
+```bash
+git clone https://github.com/pncln/sat_dynamics.git
+```
 2. Open the project:
 - In Qt Creator: Open the `CMakeLists.txt` file
 - In VS Code: Open the project folder
@@ -116,8 +118,7 @@ Contributions to enhance the simulation are highly encouraged. Potential areas f
 Please submit pull requests with clear descriptions of the changes and their purposes.
 
 ## License
-
-[Specify your chosen license here]
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Contact
 @pncln
