@@ -1,10 +1,14 @@
-// Add atmospheric drag: Implement a model for atmospheric drag, which becomes significant for low Earth orbits. This would require calculating the satellite's cross-sectional area and drag coefficient.
+// Implement higher-order gravitational harmonics: Extend beyond J2 to include J3, J4, and higher terms for more accurate gravitational modeling.
 
-// Include solar radiation pressure: Model the effect of solar radiation pressure on the satellite, which can be significant for satellites with large solar panels or reflective surfaces.
+// Enhance the atmospheric drag model: Add a sophisticated atmospheric drag calculation, considering factors like solar activity, satellite geometry, and varying atmospheric density.
 
-// Implement magnetic torque: Add the effect of Earth's magnetic field on the satellite, especially if it has magnetic torquers for attitude control.
+// Improve the solar radiation pressure model: Implement a detailed solar radiation pressure model that accounts for satellite geometry, reflectivity, and shadowing effects.
 
-// Enhance gravity model: Implement higher-order gravitational harmonics beyond J2, such as J3 and J4 terms, for more accurate gravitational modeling.
+// Add magnetic field interactions: Incorporate a high-fidelity Earth magnetic field model and simulate its effects on the satellite, especially if it has magnetic torquers.
+
+// Include relativistic effects: For very precise orbit determination, add relativistic corrections to the equations of motion.
+
+// Enhance third-body perturbations: Improve the lunar and planetary perturbation models by using more accurate ephemeris data and including additional celestial bodies.
 
 // Add thermal effects: Model how temperature changes affect the satellite's structure and components, potentially causing slight changes in its moments of inertia or introducing thermal stresses.
 
@@ -16,6 +20,7 @@
 #include <iomanip>
 #include <fstream>
 #include <cstdlib>
+#include <array>
 
 // Satellite parameters
 const double Ix = 10.0; // Moment of inertia around x-axis
@@ -52,14 +57,52 @@ const double R_saturn = 1.434e12;
 const double R_uranus = 2.871e12;
 const double R_neptune = 4.495e12;
 
+// IGRF-13 coefficients (example values, you should use the full set)
+// IGRF-13 coefficients (epoch 2020.0)
+const std::array<std::array<double, 13>, 13> g = {{
+    {0.0, -29404.8, -1450.9, -2500.0, 2982.0, 1676.7, 1363.3, -2381.2, 1236.2, 525.8, 903.0, 809.5, -217.6},
+    {0.0, -2499.6, 2982.0, 1677.0, -2991.6, -734.6, 1255.9, 271.5, -231.1, -165.8, 357.4, 68.2, 68.6},
+    {0.0, 0.0, -2991.6, -734.8, 1685.9, -575.4, 1251.7, 120.9, -335.6, -86.3, 248.0, -228.0, 92.8},
+    {0.0, 0.0, 0.0, 957.1, 245.0, -538.4, 359.6, -157.5, 186.6, -92.9, -109.0, -23.9, 72.9},
+    {0.0, 0.0, 0.0, 0.0, 290.2, -227.0, -297.5, 95.2, -30.1, -139.6, -118.2, 78.0, 45.8},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 376.0, 47.7, 275.9, -178.3, -51.4, -6.8, -16.9, -2.0},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 67.6, -25.9, -1.2, 26.4, 17.1, -50.8, 14.7},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -26.3, 4.6, 24.2, 8.9, 10.1, -14.1},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -2.3, -6.2, -18.3, 7.0, 9.4},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -10.4, -3.4, 2.4, -0.4},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -2.0, -6.5, 5.7},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -2.6, -0.5},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1}
+}};
+
+const std::array<std::array<double, 13>, 13> h = {{
+    {0.0, 0.0, 4652.5, 0.0, -2991.6, -734.6, 1255.9, 271.5, -231.1, -165.8, 357.4, 68.2, 68.6},
+    {0.0, 0.0, 0.0, -734.8, 1685.9, -575.4, 1251.7, 120.9, -335.6, -86.3, 248.0, -228.0, 92.8},
+    {0.0, 0.0, 0.0, 0.0, 245.0, -538.4, 359.6, -157.5, 186.6, -92.9, -109.0, -23.9, 72.9},
+    {0.0, 0.0, 0.0, 0.0, 0.0, -227.0, -297.5, 95.2, -30.1, -139.6, -118.2, 78.0, 45.8},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 47.7, 275.9, -178.3, -51.4, -6.8, -16.9, -2.0},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -25.9, -1.2, 26.4, 17.1, -50.8, 14.7},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.6, 24.2, 8.9, 10.1, -14.1},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -6.2, -18.3, 7.0, 9.4},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.4, 2.4, -0.4},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -6.5, 5.7},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.5},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+}};
+
+
+const double a = 6371.2; // Earth's mean radius in km
+
 // State space model for satellite rotational dynamics
 class SatelliteModel {
 private:
     std::vector<double> state; // [wx, wy, wz, qx, qy, qz, q0, x, y, z, vx, vy, vz]
     double mass; // Mass of the satellite (kg)
+    std::vector<double> magnetic_moment;
 
 public:
-    SatelliteModel(const std::vector<double>& initial_state, double satellite_mass) : state(initial_state), mass(satellite_mass) {}
+    SatelliteModel(const std::vector<double>& initial_state, double satellite_mass, const std::vector<double>& initial_magnetic_moment) : state(initial_state), mass(satellite_mass), magnetic_moment(initial_magnetic_moment) {}
 
     void update(double dt, const std::vector<double>& torque, const std::vector<double>& external_disturbance, double t) {
         // Rotational dynamics equations in state space form
@@ -130,6 +173,17 @@ public:
         state[4] /= norm;
         state[5] /= norm;
         state[6] /= norm;
+
+        // Calculate magnetic field at the satellite's position
+        std::vector<double> magnetic_field = calculate_magnetic_field(x, y, z, t);
+
+        // Calculate magnetic torque
+        std::vector<double> magnetic_torque = calculate_magnetic_torque(magnetic_moment, magnetic_field);
+
+        // Add magnetic torque to the rotational dynamics
+        wx_dot += magnetic_torque[0] / Ix;
+        wy_dot += magnetic_torque[1] / Iy;
+        wz_dot += magnetic_torque[2] / Iz;
 
         std::vector<double> solar_planetary_pert = calculate_solar_planetary_perturbations(x, y, z, t);
 
@@ -282,32 +336,115 @@ private:
     }
 
     std::vector<double> calculate_solar_planetary_perturbations(double x, double y, double z, double t) {
-    std::vector<std::vector<double>> body_positions = calculate_planet_positions(t);
-    std::vector<double> masses = {M_mercury, M_venus, M_mars, M_jupiter, M_saturn, M_uranus, M_neptune, M_sun};
+        std::vector<std::vector<double>> body_positions = calculate_planet_positions(t);
+        std::vector<double> masses = {M_mercury, M_venus, M_mars, M_jupiter, M_saturn, M_uranus, M_neptune, M_sun};
 
-    double ax = 0, ay = 0, az = 0;
+        double ax = 0, ay = 0, az = 0;
 
-    for (size_t i = 0; i < body_positions.size(); ++i) {
-        double dx = x - body_positions[i][0];
-        double dy = y - body_positions[i][1];
-        double dz = z - body_positions[i][2];
-        double r = std::sqrt(dx*dx + dy*dy + dz*dz);
-        double r_cubed = r * r * r;
+        for (size_t i = 0; i < body_positions.size(); ++i) {
+            double dx = x - body_positions[i][0];
+            double dy = y - body_positions[i][1];
+            double dz = z - body_positions[i][2];
+            double r = std::sqrt(dx*dx + dy*dy + dz*dz);
+            double r_cubed = r * r * r;
 
-        ax += G * masses[i] * (-dx / r_cubed);
-        ay += G * masses[i] * (-dy / r_cubed);
-        az += G * masses[i] * (-dz / r_cubed);
+            ax += G * masses[i] * (-dx / r_cubed);
+            ay += G * masses[i] * (-dy / r_cubed);
+            az += G * masses[i] * (-dz / r_cubed);
+        }
+
+        return {ax, ay, az};
     }
 
-    return {ax, ay, az};
-}
+    std::vector<double> calculate_magnetic_field(double x, double y, double z, double t) {
+        double r = std::sqrt(x*x + y*y + z*z);
+        double theta = std::acos(z / r);
+        double phi = std::atan2(y, x);
+
+        double B_r = 0, B_theta = 0, B_phi = 0;
+
+        for (int n = 1; n <= 13; ++n) {
+            double r_ratio = a / r;
+            double r_ratio_n_plus_1 = std::pow(r_ratio, n + 1);
+
+            for (int m = 0; m <= n; ++m) {
+                double P_nm = legendre_polynomial(n, m, std::cos(theta));
+                double dP_nm = legendre_polynomial_derivative(n, m, std::cos(theta));
+
+                double cos_m_phi = std::cos(m * phi);
+                double sin_m_phi = std::sin(m * phi);
+
+                B_r += (n + 1) * r_ratio_n_plus_1 * (g[n][m] * cos_m_phi + h[n][m] * sin_m_phi) * P_nm;
+                B_theta -= r_ratio_n_plus_1 * (g[n][m] * cos_m_phi + h[n][m] * sin_m_phi) * dP_nm;
+                B_phi -= m * r_ratio_n_plus_1 * (-g[n][m] * sin_m_phi + h[n][m] * cos_m_phi) * P_nm / std::sin(theta);
+            }
+        }
+
+        double B_x = B_r * std::sin(theta) * std::cos(phi) + B_theta * std::cos(theta) * std::cos(phi) - B_phi * std::sin(phi);
+        double B_y = B_r * std::sin(theta) * std::sin(phi) + B_theta * std::cos(theta) * std::sin(phi) + B_phi * std::cos(phi);
+        double B_z = B_r * std::cos(theta) - B_theta * std::sin(theta);
+
+        return {B_x, B_y, B_z};
+    }
+
+    std::vector<double> calculate_magnetic_torque(const std::vector<double>& magnetic_moment, const std::vector<double>& magnetic_field) {
+        return {
+            magnetic_moment[1] * magnetic_field[2] - magnetic_moment[2] * magnetic_field[1],
+            magnetic_moment[2] * magnetic_field[0] - magnetic_moment[0] * magnetic_field[2],
+            magnetic_moment[0] * magnetic_field[1] - magnetic_moment[1] * magnetic_field[0]
+        };
+    }
+
+    std::vector<double> calculate_solar_perturbations(double x, double y, double z, double t) {
+        std::vector<std::vector<double>> body_positions = calculate_planet_positions(t);
+        std::vector<double> masses = {M_mercury, M_venus, M_mars, M_jupiter, M_saturn, M_uranus, M_neptune, M_sun};
+    }
+
+    double legendre_polynomial(int n, int m, double x) {
+        if (m == 0) {
+            if (n == 0) return 1;
+            if (n == 1) return x;
+            double p0 = 1, p1 = x;
+            for (int i = 2; i <= n; ++i) {
+                double p2 = ((2 * i - 1) * x * p1 - (i - 1) * p0) / i;
+                p0 = p1;
+                p1 = p2;
+            }
+            return p1;
+        } else {
+            double pmm = 1;
+            if (m > 0) {
+                double somx2 = std::sqrt((1 - x) * (1 + x));
+                double fact = 1;
+                for (int i = 1; i <= m; ++i) {
+                    pmm *= -fact * somx2;
+                    fact += 2;
+                }
+            }
+            if (n == m) return pmm;
+            double pmmp1 = x * (2 * m + 1) * pmm;
+            if (n == m + 1) return pmmp1;
+            double pnm = 0;
+            for (int i = m + 2; i <= n; ++i) {
+                pnm = ((2 * i - 1) * x * pmmp1 - (i + m - 1) * pmm) / (i - m);
+                pmm = pmmp1;
+                pmmp1 = pnm;
+            }
+            return pnm;
+        }
+    }
+
+    double legendre_polynomial_derivative(int n, int m, double x) {
+        if (n == m) return n * x * legendre_polynomial(n, n, x) / (x * x - 1);
+        return (n * x * legendre_polynomial(n, m, x) - (n + m) * legendre_polynomial(n - 1, m, x)) / (x * x - 1);
+    }
 };
 
 int main() {
     // Initial state: [wx, wy, wz, qx, qy, qz, q0, x, y, z, vx, vy, vz]
     std::vector<double> initial_state = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, R_earth + 500000, 0.0, 0.0, 0.0, std::sqrt(G * M_earth / (R_earth + 500000)), 0.0};
     double satellite_mass = 1000.0; // kg
-    SatelliteModel satellite(initial_state, satellite_mass);
+    std::vector<double> initial_magnetic_moment = {1.0, 1.0, 1.0}; // A·m² (example values)
 
     double dt = 0.001; // Time step
     double t_max = 10; // Total simulation time
@@ -319,6 +456,8 @@ int main() {
     // Prepare data for plotting
     std::vector<double> time_data;
     std::vector<std::vector<double>> state_data(13);
+
+    SatelliteModel satellite(initial_state, satellite_mass, initial_magnetic_moment);
 
     // Simulation loop
     for (double t = 0; t < t_max; t += dt) {
