@@ -4,8 +4,6 @@
 
 // Improve the solar radiation pressure model: Implement a detailed solar radiation pressure model that accounts for satellite geometry, reflectivity, and shadowing effects.
 
-// Add magnetic field interactions: Incorporate a high-fidelity Earth magnetic field model and simulate its effects on the satellite, especially if it has magnetic torquers.
-
 // Include relativistic effects: For very precise orbit determination, add relativistic corrections to the equations of motion.
 
 // Enhance third-body perturbations: Improve the lunar and planetary perturbation models by using more accurate ephemeris data and including additional celestial bodies.
@@ -120,6 +118,10 @@ public:
         double vy = state[11];
         double vz = state[12];
 
+        std::vector<double> position = {state[7], state[8], state[9]};
+        std::vector<double> velocity = {state[10], state[11], state[12]};
+        std::vector<double> relativistic_corrections = calculate_relativistic_corrections(position, velocity);
+
         // J2 perturbation
         std::vector<double> j2_perturbation = calculate_j2_perturbation(x, y, z);
 
@@ -185,39 +187,50 @@ public:
         wy_dot += magnetic_torque[1] / Iy;
         wz_dot += magnetic_torque[2] / Iz;
 
+        // Add relativistic corrections to the acceleration
+
         std::vector<double> solar_planetary_pert = calculate_solar_planetary_perturbations(x, y, z, t);
 
         std::vector<double> r_k1 = {vx, vy, vz};
-        std::vector<double> v_k1 = {(grav_force[0] + j2_perturbation[0] + lunar_pert[0] + solar_planetary_pert[0]) / mass, 
-                                    (grav_force[1] + j2_perturbation[1] + lunar_pert[1] + solar_planetary_pert[1]) / mass, 
-                                    (grav_force[2] + j2_perturbation[2] + lunar_pert[2] + solar_planetary_pert[2]) / mass};
+        std::vector<double> v_k1 = {(grav_force[0] + j2_perturbation[0] + lunar_pert[0] + solar_planetary_pert[0] + relativistic_corrections[0]) / mass, 
+                                    (grav_force[1] + j2_perturbation[1] + lunar_pert[1] + solar_planetary_pert[1] + relativistic_corrections[1]) / mass, 
+                                    (grav_force[2] + j2_perturbation[2] + lunar_pert[2] + solar_planetary_pert[2] + relativistic_corrections[2]) / mass};
 
         std::vector<double> r_k2 = {vx + 0.5 * dt * v_k1[0], vy + 0.5 * dt * v_k1[1], vz + 0.5 * dt * v_k1[2]};
         std::vector<double> grav_force_k2 = calculate_gravitational_force(x + 0.5 * dt * r_k1[0], y + 0.5 * dt * r_k1[1], z + 0.5 * dt * r_k1[2]);
         std::vector<double> j2_perturbation_k2 = calculate_j2_perturbation(x + 0.5 * dt * r_k1[0], y + 0.5 * dt * r_k1[1], z + 0.5 * dt * r_k1[2]);
         std::vector<double> solar_planetary_pert_k2 = calculate_solar_planetary_perturbations(x + 0.5 * dt * r_k1[0], y + 0.5 * dt * r_k1[1], z + 0.5 * dt * r_k1[2], t + 0.5 * dt);
         std::vector<double> lunar_pert_k2 = calculate_lunar_perturbation(x + 0.5 * dt * r_k1[0], y + 0.5 * dt * r_k1[1], z + 0.5 * dt * r_k1[2], t + 0.5 * dt);
-        std::vector<double> v_k2 = {(grav_force_k2[0] + j2_perturbation_k2[0] + lunar_pert_k2[0] + solar_planetary_pert_k2[0]) / mass, 
-                                    (grav_force_k2[1] + j2_perturbation_k2[1] + lunar_pert_k2[1] + solar_planetary_pert_k2[1]) / mass, 
-                                    (grav_force_k2[2] + j2_perturbation_k2[2] + lunar_pert_k2[2] + solar_planetary_pert_k2[2]) / mass};
+        std::vector<double> position_k2 = {x + 0.5 * dt * r_k1[0], y + 0.5 * dt * r_k1[1], z + 0.5 * dt * r_k1[2]};
+        std::vector<double> velocity_k2 = {vx + 0.5 * dt * v_k1[0], vy + 0.5 * dt * v_k1[1], vz + 0.5 * dt * v_k1[2]};
+        std::vector<double> relativistic_corrections_k2 = calculate_relativistic_corrections(position_k2, velocity_k2);
+        std::vector<double> v_k2 = {(grav_force_k2[0] + j2_perturbation_k2[0] + lunar_pert_k2[0] + solar_planetary_pert_k2[0] + relativistic_corrections_k2[0]) / mass, 
+                                    (grav_force_k2[1] + j2_perturbation_k2[1] + lunar_pert_k2[1] + solar_planetary_pert_k2[1] + relativistic_corrections_k2[1]) / mass, 
+                                    (grav_force_k2[2] + j2_perturbation_k2[2] + lunar_pert_k2[2] + solar_planetary_pert_k2[2] + relativistic_corrections_k2[2]) / mass};
 
         std::vector<double> r_k3 = {vx + 0.5 * dt * v_k2[0], vy + 0.5 * dt * v_k2[1], vz + 0.5 * dt * v_k2[2]};
         std::vector<double> grav_force_k3 = calculate_gravitational_force(x + 0.5 * dt * r_k2[0], y + 0.5 * dt * r_k2[1], z + 0.5 * dt * r_k2[2]);
         std::vector<double> j2_perturbation_k3 = calculate_j2_perturbation(x + 0.5 * dt * r_k2[0], y + 0.5 * dt * r_k2[1], z + 0.5 * dt * r_k2[2]);
         std::vector<double> solar_planetary_pert_k3 = calculate_solar_planetary_perturbations(x + 0.5 * dt * r_k2[0], y + 0.5 * dt * r_k2[1], z + 0.5 * dt * r_k2[2], t + 0.5 * dt);
         std::vector<double> lunar_pert_k3 = calculate_lunar_perturbation(x + 0.5 * dt * r_k2[0], y + 0.5 * dt * r_k2[1], z + 0.5 * dt * r_k2[2], t + 0.5 * dt);
-        std::vector<double> v_k3 = {(grav_force_k3[0] + j2_perturbation_k3[0] + lunar_pert_k3[0] + solar_planetary_pert_k3[0]) / mass, 
-                                    (grav_force_k3[1] + j2_perturbation_k3[1] + lunar_pert_k3[1] + solar_planetary_pert_k3[1]) / mass, 
-                                    (grav_force_k3[2] + j2_perturbation_k3[2] + lunar_pert_k3[2] + solar_planetary_pert_k3[2]) / mass};
+        std::vector<double> position_k3 = {x + 0.5 * dt * r_k2[0], y + 0.5 * dt * r_k2[1], z + 0.5 * dt * r_k2[2]};
+        std::vector<double> velocity_k3 = {vx + 0.5 * dt * v_k2[0], vy + 0.5 * dt * v_k2[1], vz + 0.5 * dt * v_k2[2]};
+        std::vector<double> relativistic_corrections_k3 = calculate_relativistic_corrections(position_k3, velocity_k3);
+        std::vector<double> v_k3 = {(grav_force_k3[0] + j2_perturbation_k3[0] + lunar_pert_k3[0] + solar_planetary_pert_k3[0] + relativistic_corrections_k3[0]) / mass, 
+                                    (grav_force_k3[1] + j2_perturbation_k3[1] + lunar_pert_k3[1] + solar_planetary_pert_k3[1] + relativistic_corrections_k3[1]) / mass, 
+                                    (grav_force_k3[2] + j2_perturbation_k3[2] + lunar_pert_k3[2] + solar_planetary_pert_k3[2] + relativistic_corrections_k3[2]) / mass};
 
         std::vector<double> r_k4 = {vx + dt * v_k3[0], vy + dt * v_k3[1], vz + dt * v_k3[2]};
         std::vector<double> grav_force_k4 = calculate_gravitational_force(x + dt * r_k3[0], y + dt * r_k3[1], z + dt * r_k3[2]);
         std::vector<double> j2_perturbation_k4 = calculate_j2_perturbation(x + dt * r_k3[0], y + dt * r_k3[1], z + dt * r_k3[2]);
         std::vector<double> solar_planetary_pert_k4 = calculate_solar_planetary_perturbations(x + dt * r_k3[0], y + dt * r_k3[1], z + dt * r_k3[2], t + dt);
         std::vector<double> lunar_pert_k4 = calculate_lunar_perturbation(x + dt * r_k3[0], y + dt * r_k3[1], z + dt * r_k3[2], t + dt);
-        std::vector<double> v_k4 = {(grav_force_k4[0] + j2_perturbation_k4[0] + lunar_pert_k4[0] + solar_planetary_pert_k4[0]) / mass, 
-                                    (grav_force_k4[1] + j2_perturbation_k4[1] + lunar_pert_k4[1] + solar_planetary_pert_k4[1]) / mass, 
-                                    (grav_force_k4[2] + j2_perturbation_k4[2] + lunar_pert_k4[2] + solar_planetary_pert_k4[2]) / mass};
+        std::vector<double> position_k4 = {x + dt * r_k3[0], y + dt * r_k3[1], z + dt * r_k3[2]};
+        std::vector<double> velocity_k4 = {vx + dt * v_k3[0], vy + dt * v_k3[1], vz + dt * v_k3[2]};
+        std::vector<double> relativistic_corrections_k4 = calculate_relativistic_corrections(position_k4, velocity_k4);
+        std::vector<double> v_k4 = {(grav_force_k4[0] + j2_perturbation_k4[0] + lunar_pert_k4[0] + solar_planetary_pert_k4[0] + relativistic_corrections_k4[0]) / mass, 
+                                    (grav_force_k4[1] + j2_perturbation_k4[1] + lunar_pert_k4[1] + solar_planetary_pert_k4[1] + relativistic_corrections_k4[1]) / mass, 
+                                    (grav_force_k4[2] + j2_perturbation_k4[2] + lunar_pert_k4[2] + solar_planetary_pert_k4[2] + relativistic_corrections_k4[2]) / mass};
         
 
         state[7] += (dt / 6.0) * (r_k1[0] + 2 * r_k2[0] + 2 * r_k3[0] + r_k4[0]);
@@ -437,6 +450,23 @@ private:
     double legendre_polynomial_derivative(int n, int m, double x) {
         if (n == m) return n * x * legendre_polynomial(n, n, x) / (x * x - 1);
         return (n * x * legendre_polynomial(n, m, x) - (n + m) * legendre_polynomial(n - 1, m, x)) / (x * x - 1);
+    }
+
+    std::vector<double> calculate_relativistic_corrections(const std::vector<double>& position, const std::vector<double>& velocity) {
+        double c = 299792458.0; // Speed of light in m/s
+        double r = std::sqrt(position[0]*position[0] + position[1]*position[1] + position[2]*position[2]);
+        double v_squared = velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2];
+        double scalar_correction = G * M_earth / (c * c * r * r * r);
+        
+        std::vector<double> corrections(3);
+        for (int i = 0; i < 3; ++i) {
+            corrections[i] = scalar_correction * (
+                4 * G * M_earth / r * position[i] -
+                v_squared * position[i] +
+                4 * (position[0]*velocity[0] + position[1]*velocity[1] + position[2]*velocity[2]) * velocity[i]
+            );
+        }
+        return corrections;
     }
 };
 
