@@ -89,9 +89,3 @@ int main() {
 
     return 0;
 }
-
-// Verify that all variables in AttitudeControlSystem and SatelliteModel are properly initialized in their constructors.
-// Check that data is correctly passed between main, AttitudeControlSystem, and SatelliteModel.
-// Ensure that the order of calculations remains the same as in your original main.cpp.
-// Add debug print statements to track variable values at key points in each class.
-// Use a debugger to step through the code and identify where nan values first appear.
