@@ -22,6 +22,9 @@ find_package(Qt6 REQUIRED COMPONENTS
 
 add_executable(sat_dynamics
   main.cpp
+  SatelliteModel.h SatelliteModel.cpp
+  AttitudeControlSystem.h AttitudeControlSystem.cpp
+  Constants.h
 )
 target_link_libraries(sat_dynamics Qt${QT_VERSION_MAJOR}::Core
     Qt6::3DCore
