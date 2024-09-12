@@ -1,6 +1,6 @@
 # Satellite Dynamics Simulation
 
-This repository contains a sophisticated C++ project for simulating complex satellite dynamics in space, accounting for various perturbations and celestial body influences.
+C++ project for simulating complex satellite dynamics in space, accounting for various perturbations and celestial body influences.
 
 ## Project Structure
 
