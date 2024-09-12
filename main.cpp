@@ -6,6 +6,7 @@
 #include "SatelliteModel.h"
 #include "AttitudeControlSystem.h"
 
+
 int main() {
     // Initial state: [wx, wy, wz, qx, qy, qz, q0, a, e, i, Omega, omega, nu]
     std::vector<double> initial_state = {
@@ -25,7 +26,7 @@ int main() {
     AttitudeControlSystem acs;
 
     double dt = 0.01; // Time step
-    double t_max = 60*60; // Total simulation time ()
+    double t_max = 60*4; // Total simulation time ()
 
     // Prepare data for plotting
     std::vector<double> time_data;

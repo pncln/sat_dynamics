@@ -11,20 +11,12 @@ private:
     std::vector<double> magnetic_moment;
     std::vector<double> desired_state;
 
-    // Helper functions
-    std::vector<double> cross_product(const std::vector<double>& a, const std::vector<double>& b);
-    double magnitude(const std::vector<double>& v);
-    double dot_product(const std::vector<double>& a, const std::vector<double>& b);
-    std::vector<double> subtract_vectors(const std::vector<double>& a, const std::vector<double>& b);
-    std::vector<double> scale_vector(const std::vector<double>& v, double scalar);
-    // std::vector<double> add_vectors(const std::vector<double>& vector1, const std::vector<double>& vector2, const std::vector<double>& vector3 = std::vector<double>());
-
 public:
     SatelliteModel(const std::vector<double>& initial_state, double satellite_mass, const std::vector<double>& initial_magnetic_moment);
 
     void update(double dt, const std::vector<double>& torque, const std::vector<double>& external_disturbance, double t);
     std::vector<double> calculate_derivatives(const std::vector<double>& state, const std::vector<double>& torque, const std::vector<double>& external_disturbance, double t);
-    std::vector<double> keplerian_to_cartesian(double a, double e, double i, double Omega, double omega, double nu);
+    // std::vector<double> keplerian_to_cartesian(double a, double e, double i, double Omega, double omega, double nu);
     std::vector<double> cartesian_to_keplerian(double x, double y, double z, double vx, double vy, double vz);
     std::vector<double> calculate_lunar_perturbation(double a, double e, double i, double Omega, double omega, double nu, double t);
     std::vector<double> calculate_solar_planetary_perturbations(double a, double e, double i, double Omega, double omega, double nu, double t);

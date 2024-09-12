@@ -1,6 +1,16 @@
 #include <iostream>
 #include <cassert>
 #include "SatelliteModel.h"
+#include "functions/keplerian_to_cartesian.h"
+#include "functions/cartesian_to_keplerian.h"
+#include "functions/cross_product.h"
+#include "functions/magnitude.h"
+#include "functions/dot_product.h"
+#include "functions/subtract_vectors.h"
+#include "functions/add_vectors.h"
+#include "functions/multiply_vector.h"
+#include "functions/scale_vector.h"
+
 
     SatelliteModel::SatelliteModel(const std::vector<double>& initial_state, double satellite_mass, const std::vector<double>& initial_magnetic_moment)
     : state(initial_state), mass(satellite_mass), magnetic_moment(initial_magnetic_moment) {
@@ -10,90 +20,6 @@
 
     void SatelliteModel::set_desired_state(const std::vector<double>& new_desired_state) {
         desired_state = new_desired_state;
-    }
-
-    std::vector<double> SatelliteModel::keplerian_to_cartesian(double a, double e, double i, double Omega, double omega, double nu) {
-        double p = a * (1 - e * e);
-        double r = p / (1 + e * cos(nu));
-
-        double x = r * (cos(Omega) * cos(omega + nu) - sin(Omega) * sin(omega + nu) * cos(i));
-        double y = r * (sin(Omega) * cos(omega + nu) + cos(Omega) * sin(omega + nu) * cos(i));
-        double z = r * sin(omega + nu) * sin(i);
-
-        double h = sqrt(G * M_earth * p);
-        double vx = (x * h * e / (r * p)) * sin(nu) - (h / r) * (cos(Omega) * sin(omega + nu) + sin(Omega) * cos(omega + nu) * cos(i));
-        double vy = (y * h * e / (r * p)) * sin(nu) - (h / r) * (sin(Omega) * sin(omega + nu) - cos(Omega) * cos(omega + nu) * cos(i));
-        double vz = (z * h * e / (r * p)) * sin(nu) + (h / r) * cos(omega + nu) * sin(i);
-
-        return {x, y, z, vx, vy, vz};
-    }
-
-    std::vector<double> SatelliteModel::cartesian_to_keplerian(double x, double y, double z, double vx, double vy, double vz) {
-        std::vector<double> r = {x, y, z};
-        std::vector<double> v = {vx, vy, vz};
-
-        double r_mag = sqrt(x*x + y*y + z*z);
-        double v_mag = sqrt(vx*vx + vy*vy + vz*vz);
-
-        std::vector<double> h = cross_product(r, v);
-        double h_mag = magnitude(h);
-
-        double e_scalar = (v_mag*v_mag - G*M_earth/r_mag) * r_mag - dot_product(r, v) * dot_product(r, v);
-        e_scalar /= G * M_earth;
-        std::vector<double> e_vec = subtract_vectors(scale_vector(subtract_vectors(scale_vector(v, r_mag), scale_vector(r, dot_product(r, v)/r_mag)), 1.0/G/M_earth), scale_vector(r, 1.0/r_mag));
-        double e = magnitude(e_vec);
-
-        double a = -G * M_earth / (2 * (v_mag*v_mag/2 - G*M_earth/r_mag));
-        double i = acos(h[2] / h_mag);
-        double Omega = atan2(h[0], -h[1]);
-        double omega = atan2(e_vec[2]/sin(i), e_vec[0]*cos(Omega) + e_vec[1]*sin(Omega));
-        double nu = atan2(dot_product(r, v) * h_mag, h_mag*h_mag - r_mag*G*M_earth);
-
-        return {a, e, i, Omega, omega, nu};
-    }
-
-    std::vector<double> SatelliteModel::cross_product(const std::vector<double>& a, const std::vector<double>& b) {
-        return {
-            a[1] * b[2] - a[2] * b[1],
-            a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0]
-        };
-    }
-
-    double SatelliteModel::magnitude(const std::vector<double>& v) {
-        return std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-    }
-
-    double SatelliteModel::dot_product(const std::vector<double>& a, const std::vector<double>& b) {
-        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    }
-
-    std::vector<double> SatelliteModel::subtract_vectors(const std::vector<double>& a, const std::vector<double>& b) {
-        return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
-    }
-
-    std::vector<double> SatelliteModel::scale_vector(const std::vector<double>& v, double scalar) {
-        return {v[0] * scalar, v[1] * scalar, v[2] * scalar};
-    }
-
-
-    std::vector<double> multiply_vector(const std::vector<double>& vec, double scalar) {
-        std::vector<double> result(vec.size());
-        for (size_t i = 0; i < vec.size(); ++i) {
-            result[i] = vec[i] * scalar;
-        }
-        return result;
-    }
-
-    std::vector<double> add_vectors(const std::vector<double>& vec1, const std::vector<double>& vec2, const std::vector<double>& vec3 = std::vector<double>()) {
-        std::vector<double> result(vec1.size());
-        for (size_t i = 0; i < vec1.size(); ++i) {
-            result[i] = vec1[i] + vec2[i];
-            if (!vec3.empty()) {
-                result[i] += vec3[i];
-            }
-        }
-        return result;
     }
 
     void SatelliteModel::update(double dt, const std::vector<double>& torque, const std::vector<double>& external_disturbance, double t) {

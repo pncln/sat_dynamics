@@ -25,6 +25,15 @@ add_executable(sat_dynamics
   SatelliteModel.h SatelliteModel.cpp
   AttitudeControlSystem.h AttitudeControlSystem.cpp
   Constants.h
+  functions/keplerian_to_cartesian.h functions/keplerian_to_cartesian.cpp
+  functions/cartesian_to_keplerian.h functions/cartesian_to_keplerian.cpp
+  functions/cross_product.h functions/cross_product.cpp
+  functions/magnitude.h functions/magnitude.cpp
+  functions/dot_product.h functions/dot_product.cpp
+  functions/subtract_vectors.h functions/subtract_vectors.cpp
+  functions/scale_vector.h functions/scale_vector.cpp
+  functions/multiply_vector.h functions/multiply_vector.cpp
+  functions/add_vectors.h functions/add_vectors.cpp
 )
 target_link_libraries(sat_dynamics Qt${QT_VERSION_MAJOR}::Core
     Qt6::3DCore
