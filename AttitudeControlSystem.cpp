@@ -20,7 +20,7 @@ std::vector<double> AttitudeControlSystem::calculate_control_torque(const std::v
         // Allocate control torque to actuators
         allocate_control_torque(control_torque, magnetic_field);
 
-        std::cout << "Control torque: " << control_torque[0] << ", " << control_torque[1] << ", " << control_torque[2] << std::endl;
+        // std::cout << "Control torque: " << control_torque[0] << ", " << control_torque[1] << ", " << control_torque[2] << std::endl;
 
         return control_torque;
     }
@@ -43,9 +43,9 @@ std::vector<double> AttitudeControlSystem::calculate_control_torque(const std::v
             thruster_force[i] = control_torque[i] * 0.2 / 0.1; // Assume 20% allocation and 0.1m moment arm
         }
 
-        std::cout << "Reaction wheel momentum: " << reaction_wheel_momentum[0] << ", " << reaction_wheel_momentum[1] << ", " << reaction_wheel_momentum[2] << std::endl;
-        std::cout << "Magnetorquer dipole: " << magnetorquer_dipole[0] << ", " << magnetorquer_dipole[1] << ", " << magnetorquer_dipole[2] << std::endl;
-        std::cout << "Thruster force: " << thruster_force[0] << ", " << thruster_force[1] << ", " << thruster_force[2] << std::endl;
+        // std::cout << "Reaction wheel momentum: " << reaction_wheel_momentum[0] << ", " << reaction_wheel_momentum[1] << ", " << reaction_wheel_momentum[2] << std::endl;
+        // std::cout << "Magnetorquer dipole: " << magnetorquer_dipole[0] << ", " << magnetorquer_dipole[1] << ", " << magnetorquer_dipole[2] << std::endl;
+        // std::cout << "Thruster force: " << thruster_force[0] << ", " << thruster_force[1] << ", " << thruster_force[2] << std::endl;
     }
 
     void AttitudeControlSystem::calculate_magnetorquer_dipole(const std::vector<double>& desired_torque, const std::vector<double>& magnetic_field) {
