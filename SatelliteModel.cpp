@@ -62,7 +62,7 @@
         derivatives[1] = (torque[1] + external_disturbance[1] + (Iz - Ix) * wz * wx) / Iy;
         derivatives[2] = (torque[2] + external_disturbance[2] + (Ix - Iy) * wx * wy) / Iz;
 
-         std::cout << "Derivatives calculated: " << derivatives[0] << ", " << derivatives[1] << ", " << derivatives[2] << "..." << std::endl;
+        //  std::cout << "Derivatives calculated: " << derivatives[0] << ", " << derivatives[1] << ", " << derivatives[2] << "..." << std::endl;
 
         // Quaternion derivatives (unchanged)
         derivatives[3] = 0.5 * (q0 * wx - qz * wy + qy * wz);
