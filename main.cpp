@@ -25,8 +25,8 @@ int main() {
     SatelliteModel satellite(initial_state, satellite_mass, initial_magnetic_moment);
     AttitudeControlSystem acs;
 
-    double dt = 0.01; // Time step
-    double t_max = 60*4; // Total simulation time ()
+    double dt = 0.05; // Time step
+    double t_max = 60*60; // Total simulation time ()
 
     // Prepare data for plotting
     std::vector<double> time_data;
