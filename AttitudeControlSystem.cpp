@@ -2,18 +2,18 @@
 #include "AttitudeControlSystem.h"
 
 AttitudeControlSystem::AttitudeControlSystem() :
-        reaction_wheel_momentum(3, 0.0),
-        magnetorquer_dipole(3, 0.0),
-        thruster_force(3, 0.0),
+        reaction_wheel_momentum(3.0, 0.0),
+        magnetorquer_dipole(3.0, 0.0),
+        thruster_force(3.0, 0.0),
         Kp({0.1, 0.1, 0.05}),
         Kd({0.5, 0.5, 0.25}) {}
 
 std::vector<double> AttitudeControlSystem::calculate_control_torque(const std::vector<double>& current_state, const std::vector<double>& desired_state, const std::vector<double>& magnetic_field) {
-        std::vector<double> control_torque(3, 0.0);
+        std::vector<double> control_torque(3.0, 0.0);
 
         for (int i = 0; i < 3; ++i) {
             double error = desired_state[i] - current_state[i];
-            double error_rate = -current_state[i + 7]; // Assuming angular velocity starts at index 7
+            double error_rate = -current_state[i]; // Assuming angular velocity starts at index 0
             control_torque[i] = Kp[i] * error + Kd[i] * error_rate;
         }
 

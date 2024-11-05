@@ -13,11 +13,11 @@ int main() {
         0.0, 0.0, 0.0,                 // Angular velocities
         0.0, 0.0, 0.0, 1.0,            // Quaternion (identity rotation)
         R_earth + 500000.0,            // Semi-major axis (500 km altitude)
-        0.001,                         // Eccentricity (near-circular orbit)
+        0.013,                         // Eccentricity (near-circular orbit)
         0.9553,                        // Inclination (54.74 degrees)
-        0.0,                           // Right Ascension of Ascending Node
-        0.0,                           // Argument of Perigee
-        0.0                            // True Anomaly
+        0.07,                           // Right Ascension of Ascending Node
+        0.07,                           // Argument of Perigee
+        0.07                            // True Anomaly
     };
     double satellite_mass = 1000.0; // kg
     std::vector<double> initial_magnetic_moment = {1.0, 1.0, 1.0}; // A·m² (example values)
@@ -26,7 +26,7 @@ int main() {
     AttitudeControlSystem acs;
 
     double dt = 0.05; // Time step
-    double t_max = 60*60; // Total simulation time ()
+    double t_max = 60*25; // Total simulation time ()
 
     // Prepare data for plotting
     std::vector<double> time_data;
@@ -65,7 +65,7 @@ int main() {
         if (std::fmod(t, 60) < dt) {
             std::cout << std::fixed << std::setprecision(6);
             std::cout << "Time: " << std::setw(8) << t / 3600.0 << " hours" << std::endl;
-            std::cout << "Semi-major axis: " << state[7] << " m, Eccentricity: " << state[8]
+            std::cout << "Semi-major axis: " << state[7] << " m, Eccentricity: " << current_state[8]
                       << ", Inclination: " << state[9] * 180.0 / M_PI << " deg" << std::endl;
             std::cout << "RAAN: " << state[10] * 180.0 / M_PI << " deg, Arg of Perigee: "
                       << state[11] * 180.0 / M_PI << " deg, True Anomaly: " << state[12] * 180.0 / M_PI << " deg" << std::endl;

@@ -39,6 +39,7 @@
 
         // Ensure Keplerian elements remain within valid ranges
         state[8] = std::max(0.0, std::min(state[8], 0.99999)); // Eccentricity
+        // state[8] = std::fmod(state[8], 2 * M_PI);
         state[9] = std::fmod(state[9], 2 * M_PI); // Inclination
         state[10] = std::fmod(state[10], 2 * M_PI); // RAAN
         state[11] = std::fmod(state[11], 2 * M_PI); // Argument of periapsis
@@ -56,6 +57,7 @@
         double wx = state[0], wy = state[1], wz = state[2];
         double qx = state[3], qy = state[4], qz = state[5], q0 = state[6];
         double a = state[7], e = state[8], i = state[9], Omega = state[10], omega = state[11], nu = state[12];
+        // std::cout << "Debug states: " <<  state[8] << std::endl;
 
         // Angular acceleration (unchanged)
         derivatives[0] = (torque[0] + external_disturbance[0] + (Iy - Iz) * wy * wz) / Ix;
@@ -75,18 +77,17 @@
         double p = a * (1 - e * e);
         double h = std::sqrt(G * M_earth * p);
 
-        derivatives[7] = 0; // Semi-major axis rate (assuming no thrust)
-        derivatives[8] = 0; // Eccentricity rate (assuming no perturbations)
-        derivatives[9] = 0; // Inclination rate (assuming no out-of-plane forces)
-        derivatives[10] = 0; // RAAN rate (assuming no out-of-plane forces)
-        derivatives[11] = 0; // Argument of periapsis rate (assuming no perturbations)
+        derivatives[7] = 0.01; // Semi-major axis rate (assuming no thrust)
+        derivatives[8] = 0.01; // Eccentricity rate (assuming no perturbations)
+        derivatives[9] = 0.0001; // Inclination rate (assuming no out-of-plane forces)
+        derivatives[10] = 0.0001; // RAAN rate (assuming no out-of-plane forces)
+        derivatives[11] = 0.01; // Argument of periapsis rate (assuming no perturbations)
         derivatives[12] = n * std::pow((1 + e * std::cos(nu)) / (1 - e * e), 2); // True anomaly rate
 
         // Add perturbations (simplified for demonstration)
         std::vector<double> cartesian = keplerian_to_cartesian(a, e, i, Omega, omega, nu);
         std::vector<double> lunar_pert = calculate_lunar_perturbation(a, e, i, Omega, omega, nu, t);
         std::vector<double> solar_planetary_pert = calculate_solar_planetary_perturbations(a, e, i, Omega, omega, nu, t);
-
 
         // Convert perturbations to Keplerian rates (simplified)
         double perturb_magnitude = magnitude(lunar_pert) + magnitude(solar_planetary_pert);
@@ -110,9 +111,9 @@
         double x = pos[0], y = pos[1], z = pos[2];
         double r = std::sqrt(x*x + y*y + z*z);
         double F_grav = G * M_earth * mass / (r * r);
-        double Tx = 3 * F_grav * (y*z) * (Iz - Iy) / (r*r);
-        double Ty = 3 * F_grav * (z*x) * (Ix - Iz) / (r*r);
-        double Tz = 3 * F_grav * (x*y) * (Iy - Ix) / (r*r);
+        double Tx = 3 * F_grav * (y*z) * (Iz - Iy) / (r*r*r);
+        double Ty = 3 * F_grav * (z*x) * (Ix - Iz) / (r*r*r);
+        double Tz = 3 * F_grav * (x*y) * (Iy - Ix) / (r*r*r);
         return {Tx, Ty, Tz};
     }
 
