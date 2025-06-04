@@ -1,4 +1,4 @@
-# Satellite Dynamics Simulation
+# Satellite Dynamics Simulation & Orbit Propagation
 
 C++ project for simulating complex satellite dynamics in space, accounting for various perturbations and celestial body influences.
 
